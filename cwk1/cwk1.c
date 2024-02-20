@@ -74,6 +74,7 @@ void removeFromSet( int value )
 
     // Find where the index in the set corresponding to the value, if any.
     int index = -1;
+    #pragma omp parallel for
     for( i=0; i<setSize; i++ )
         if( set[i]==value )
             index = i;
@@ -82,6 +83,7 @@ void removeFromSet( int value )
     // and also reducing the set size by one.
     if( index!= -1 )
     {
+        #pragma omg parallel for
         for( i=index; i<setSize-1; i++ )
             set[i] = set[i+1];
         setSize--;
@@ -94,7 +96,25 @@ void removeFromSet( int value )
 //
 void sortSet()
 {
-     // Your parallel sort should go here.
+    // Bubble sort.
+    int swapped = 0;
+
+    while(swapped != 1)
+    {
+        swapped = 1;
+        
+        for( int i = 0; i < setSize - 1; i++)
+        {
+            if( set[i] > set[i+1] )
+            {
+                int temp = set[i];
+                set[i] = set[i+1];
+                set[i+1] = temp;
+
+                swapped = 0;
+            }
+        }
+    }
 }
 
 

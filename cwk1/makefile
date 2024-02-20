@@ -14,4 +14,4 @@ all:
 test:
 	$(CC) $(CCFLAGS) -o $(EXE) cwk1.c
 	echo "running code"
-	./$(EXE) 50 100 20 0
+	./$(EXE) 50 100 20 1
