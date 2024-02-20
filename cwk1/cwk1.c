@@ -44,15 +44,20 @@
 //
 void addToSet( int value )
 {
-    int i;
+    int i, in_set = 0;
 
     // Cannot exceed the maximum size.
     if( setSize==maxSetSize ) return;
 
     // Since sets should not have duplicates, first check this value is not already in the set.
+    #pragma omp critical
     for( i=0; i<setSize; i++ )
         if( set[i]==value )
-            return;
+        {
+            in_set = 1;
+        }
+
+    if( in_set == 1) return;
 
     // Only reach this point if the value was not found and there is room to add to the set.
     set[setSize] = value;
@@ -129,8 +134,13 @@ int main( int argc, char **argv )
     srand( time(NULL) );
 
     // Add random numbers in the range 0 to maxSetSize-1 inclusive.
+
+    // ###### THIS IS WHERE QUESTION 1 HAPPENS ######
+    #pragma omp parallel for
     for( i=0; i<initSetSize; i++ )
+    {
         addToSet( rand()%maxSetSize );
+    }
 
     printf( "Attempted to add %i random values. Current state of set:\n", initSetSize );
     printSet();
