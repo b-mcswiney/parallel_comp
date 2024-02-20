@@ -83,6 +83,7 @@ void removeFromSet( int value )
     // and also reducing the set size by one.
     if( index!= -1 )
     {
+        
         for( i=index; i<setSize-1; i++ )
             set[i] = set[i+1];
         setSize--;
@@ -96,22 +97,17 @@ void removeFromSet( int value )
 void sortSet()
 {
     // Bubble sort.
-    int swapped = 0;
-
-    while(swapped != 1)
+    for( int i = 0; i < setSize - 1; i++)
     {
-        swapped = 1;
-
         #pragma omp parallel for
-        for( int i = 0; i < setSize - 1; i++)
+        for( int j = 0; j < setSize - i - 1; j++)
         {
-            if( set[i] > set[i+1] )
+            // printf("Thread num: %i Max Theads: %i \n", omp_get_thread_num(), omp_get_max_threads());
+            if( set[j] > set[j+1] )
             {
-                int temp = set[i];
-                set[i] = set[i+1];
-                set[i+1] = temp;
-
-                swapped = 0;
+                int temp = set[j];
+                set[j] = set[j+1];
+                set[j+1] = temp;
             }
         }
     }
