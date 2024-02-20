@@ -83,7 +83,6 @@ void removeFromSet( int value )
     // and also reducing the set size by one.
     if( index!= -1 )
     {
-        #pragma omg parallel for
         for( i=index; i<setSize-1; i++ )
             set[i] = set[i+1];
         setSize--;
@@ -102,7 +101,8 @@ void sortSet()
     while(swapped != 1)
     {
         swapped = 1;
-        
+
+        #pragma omp parallel for
         for( int i = 0; i < setSize - 1; i++)
         {
             if( set[i] > set[i+1] )
