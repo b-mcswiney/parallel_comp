@@ -11,7 +11,8 @@ CCFLAGS = -Wall -fopenmp
 all:
 	$(CC) $(CCFLAGS) -o $(EXE) cwk1.c
 
-test:
-	$(CC) $(CCFLAGS) -o $(EXE) cwk1.c
-	echo "running code"
+test: all
+	./$(EXE) 50 100 20 0
+
+sort: all
 	./$(EXE) 50 100 20 1

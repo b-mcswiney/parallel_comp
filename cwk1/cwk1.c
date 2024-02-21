@@ -70,12 +70,12 @@ void addToSet( int value )
 //
 void removeFromSet( int value )
 {
-    int i;
+    // int i;
 
     // Find where the index in the set corresponding to the value, if any.
     int index = -1;
     #pragma omp parallel for
-    for( i=0; i<setSize; i++ )
+    for( int i=0; i<setSize; i++ )
         if( set[i]==value )
             index = i;
 
@@ -83,8 +83,8 @@ void removeFromSet( int value )
     // and also reducing the set size by one.
     if( index!= -1 )
     {
-        
-        for( i=index; i<setSize-1; i++ )
+        #pragma omp parallel for
+        for( int i=index; i<setSize-1; i++ )
             set[i] = set[i+1];
         setSize--;
     }
