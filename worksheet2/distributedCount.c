@@ -30,152 +30,174 @@
 //
 // Main
 //
-int main( int argc, char **argv )
-{
-	int i, p, total, globalSize=-1, localSize;
+int main(int argc, char **argv) {
+    int i, total, globalSize = -1, localSize;
+    // int p // Not used in collective communication but kept for sake of comparison
 
-	//
-	// Initialisation
-	//
+    //
+    // Initialisation
+    //
 
-	// Initialise MPI and get the rank and no. of processes.
-	int rank, numProcs;
-	MPI_Init( &argc, &argv );
-	MPI_Comm_size( MPI_COMM_WORLD, &numProcs );
-	MPI_Comm_rank( MPI_COMM_WORLD, &rank     );
+    // Initialise MPI and get the rank and no. of processes.
+    int rank, numProcs;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-	// Allocate memory for the full array on rank 0 only.
-	int *globalData = NULL;
-	if( rank==0 )
-	{
-		// Round up to the next-highest multiple of numProcs.
-		globalSize = numProcs * ( (N+numProcs-1)/numProcs );
+    // Allocate memory for the full array on rank 0 only.
+    int *globalData = NULL;
+    if (rank == 0) {
+        // Round up to the next-highest multiple of numProcs.
+        globalSize = numProcs * ((N + numProcs - 1) / numProcs);
 
-		// Try to allocate memory for the global data array.
-		globalData = (int*) malloc( globalSize*sizeof(int) );
-		if( !globalData )
-		{
-			printf( "Could not allocate memory for the global data array.\n" );
-			MPI_Finalize();
-			return EXIT_FAILURE;
-		}
+        // Try to allocate memory for the global data array.
+        globalData = (int *) malloc(globalSize * sizeof(int));
+        if (!globalData) {
+            printf("Could not allocate memory for the global data array.\n");
+            MPI_Finalize();
+            return EXIT_FAILURE;
+        }
 
-		// Fill the array with random numbers in the range 0 to 99 inclusive. Not a very good way
-		// of doing this (will generate a non-uniform distribution), but fine for this example.
-		srand( time(NULL) );
-		for( i=0; i<globalSize; i++ )
-			globalData[i] = rand() % 100;
-	}
+        // Fill the array with random numbers in the range 0 to 99 inclusive. Not a very good way
+        // of doing this (will generate a non-uniform distribution), but fine for this example.
+        srand(time(NULL));
+        for (i = 0; i < globalSize; i++)
+            globalData[i] = rand() % 100;
+    }
 
-	// Start the timer.
-	double startTime = MPI_Wtime();
+    // Start the timer.
+    double startTime = MPI_Wtime();
 
-	//
-	// Step 1. All ranks must know the (dynamic) local array size. For this example they could all calculate
-	// it independently, but imagine e.g. rank 0 read the data in from a file.
-	//
+    //
+    // Step 1. All ranks must know the (dynamic) local array size. For this example they could all calculate
+    // it independently, but imagine e.g. rank 0 read the data in from a file.
+    //
 
-	// All ranks (including rank 0) have a local array. However, they do not yet know the size, so cannot
-	// allocate memory for the array, nor call MPI receive routines with the correct expected message size.
+    // All ranks (including rank 0) have a local array. However, they do not yet know the size, so cannot
+    // allocate memory for the array, nor call MPI receive routines with the correct expected message size.
 
-	// Point-to-point: Use a loop of send-and-receives.
-	if( rank==0 )
-	{
-		// Problem size per process, in principle not known to any rank except rank 0.
-		localSize = globalSize / numProcs;
+    // Point-to-point: Use a loop of send-and-receives.
+//	if( rank==0 )
+//	{
+//		// Problem size per process, in principle not known to any rank except rank 0.
+//		localSize = globalSize / numProcs;
+//
+//		// Note &localSize looks to the MPI function like an array of size 1.
+//		for( p=1; p<numProcs; p++ )
+//			MPI_Send( &localSize, 1, MPI_INT, p ,0, MPI_COMM_WORLD );
+//	}
+//	else
+//	{
+//		MPI_Recv( &localSize, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+//	}
 
-		// Note &localSize looks to the MPI function like an array of size 1.
-		for( p=1; p<numProcs; p++ )
-			MPI_Send( &localSize, 1, MPI_INT, p ,0, MPI_COMM_WORLD );
-	}
-	else
-	{
-		MPI_Recv( &localSize, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-	}
+    // collective communication implementation
+    if(rank == 0) localSize = globalSize / numProcs; // rank 0 defines local size
 
-	// All ranks can now allocate memory for their local arrays.
-	int *localData = (int*) malloc( localSize*sizeof(int) );
-	if( !localData )
-	{
-		printf( "Could not allocate memory for the local data array on rank %d.\n", rank );
-		MPI_Finalize();
-		return EXIT_FAILURE;
-	}
+    MPI_Bcast(&localSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-	//
-	// Step 2. Distribute the global array to the local arrays on all processes.
-	//
+    // All ranks can now allocate memory for their local arrays.
+    int *localData = (int *) malloc(localSize * sizeof(int));
+    if (!localData) {
+        printf("Could not allocate memory for the local data array on rank %d.\n", rank);
+        MPI_Finalize();
+        return EXIT_FAILURE;
+    }
 
-	// Point-to-point: Use a loop of send-and-receives. Note we copy the data from globalData to
-	// localData for rank 0, to make replacing this with MPI_Scatter a bit easier.
-	if( rank==0 )
-	{
-		// Copy first segment to own localData (nb. never 'send' to self!)
-		for( i=0; i<localSize; i++ ) localData[i] = globalData[i];
+    //
+    // Step 2. Distribute the global array to the local arrays on all processes.
+    //
 
-		// Send the remaining segments.
-		for( p=1; p<numProcs; p++ )
-			MPI_Send( &globalData[p*localSize], localSize, MPI_INT, p, 0, MPI_COMM_WORLD );
-	}
-	else
-	{
-		MPI_Recv( localData, localSize, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-	}
+    // Point-to-point: Use a loop of send-and-receives. Note we copy the data from globalData to
+    // localData for rank 0, to make replacing this with MPI_Scatter a bit easier.
+//	if( rank==0 )
+//	{
+//		// Copy first segment to own localData (nb. never 'send' to self!)
+//		for( i=0; i<localSize; i++ ) localData[i] = globalData[i];
+//
+//		// Send the remaining segments.
+//		for( p=1; p<numProcs; p++ )
+//			MPI_Send( &globalData[p*localSize], localSize, MPI_INT, p, 0, MPI_COMM_WORLD );
+//	}
+//	else
+//	{
+//		MPI_Recv( localData, localSize, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+//	}
 
-	//
-	// Step 3. Each process performs the count on its local data. This is purely computation and
-	// doesn't need to be modified.
-	//
-	int count = 0;
-	for( i=0; i<localSize; i++ )
-		if( localData[i] < 10 ) count++;
+    // Collective communication implementation
+    MPI_Scatter(
+            globalData, localSize, MPI_INT,
+            localData, localSize, MPI_INT,
+            0, MPI_COMM_WORLD
+            );
 
-	//
-	// Step 4. Send all of the local counts back to rank 0, which calculates the total.
-	//
+    //
+    // Step 3. Each process performs the count on its local data. This is purely computation and
+    // doesn't need to be modified.
+    //
+    int count = 0;
+    for (i = 0; i < localSize; i++)
+        if (localData[i] < 10) count++;
 
-	// Point-to-point: Use a loop of send-and-receives.
-	if( rank==0 )
-	{
-		// Start the running total with rank 0's count.
-		total = count;
+    //
+    // Step 4. Send all of the local counts back to rank 0, which calculates the total.
+    //
 
-		// Now add on all of the counts from the other processes.
-		for( p=1; p<numProcs; p++ )
-		{
-			int next;
-			MPI_Recv( &next, 1, MPI_INT, p, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-			total += next;
-		}
-	}
-	else
-	{
-		MPI_Send( &count, 1, MPI_INT, 0, 0, MPI_COMM_WORLD );
-	}
-
-
-	//
-	// Check: Rank 0 performs an independent count on the global data. Rank 0 also outputs
-	// how long it took (including allocation of the local arrays).
-	//
-	if( rank==0 )
-	{
-		printf( "Time taken: %g s.\n", MPI_Wtime() - startTime );
-
-		int check = 0;
-		for( i=0; i<globalSize; i++ )
-			if( globalData[i] < 10 ) check++;
-
-		printf( "Distributed count %d (cf. serial count %d).\n", total, check );
-	}
+    // Point-to-point: Use a loop of send-and-receives.
+//    if (rank == 0) {
+//        // Start the running total with rank 0's count.
+//        total = count;
+//
+//        // Now add on all of the counts from the other processes.
+//        for (p = 1; p < numProcs; p++) {
+//            int next;
+//            MPI_Recv(&next, 1, MPI_INT, p, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+//            total += next;
+//        }
+//    } else {
+//        MPI_Send(&count, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+//    }
 
 
-	//
-	// Clear up and quit.
-	//
-	if( rank==0 ) free( globalData );
-	free( localData );
-	MPI_Finalize();
-	return EXIT_SUCCESS;
+    // Collective communication implementation
+//    int *partials;
+//    partials = (int *) malloc(numProcs * sizeof(int));
+//
+//    MPI_Gather(
+//            &count, 1, MPI_INT,
+//            partials, 1, MPI_INT,
+//            0, MPI_COMM_WORLD
+//            );
+
+//    for(i=0; i<numProcs; i++)
+//    {
+//        total+=partials[i];
+//    }
+
+    // MPI_Reduce implementation of above loop and gather
+    MPI_Reduce(&count, &total, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    //
+    // Check: Rank 0 performs an independent count on the global data. Rank 0 also outputs
+    // how long it took (including allocation of the local arrays).
+    //
+    if (rank == 0) {
+        printf("Time taken: %g s.\n", MPI_Wtime() - startTime);
+
+        int check = 0;
+        for (i = 0; i < globalSize; i++)
+            if (globalData[i] < 10) check++;
+
+        printf("Distributed count %d (cf. serial count %d).\n", total, check);
+    }
+
+
+    //
+    // Clear up and quit.
+    //
+    if (rank == 0) free(globalData);
+    free(localData);
+    MPI_Finalize();
+    return EXIT_SUCCESS;
 }
 
