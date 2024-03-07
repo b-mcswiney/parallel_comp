@@ -23,7 +23,11 @@ dist:
 	$(CC) $(CCFLAGS) -o distributedCount distributedCount.c
 	mpiexec -n 4 -oversubscribe ./distributedCount
 
+heat:
+	$(CC) $(CCFLAGS) -o heatEqn heatEqn.c
+	mpiexec -n 4 -oversubscribe ./heatEqn
+
 clean:
-	rm vectorAddition vectorDouble cyclicSendAndReceive distributedCount
+	rm vectorAddition vectorDouble cyclicSendAndReceive distributedCount heatEqn
 
 
