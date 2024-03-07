@@ -44,26 +44,31 @@
 //
 void addToSet( int value )
 {
-    int i, in_set = 0;
+    int should_return = 0;
 
+
+    #pragma omp critical
+    {
     // Cannot exceed the maximum size.
-    if( setSize==maxSetSize ) return;
+    if( setSize==maxSetSize ) should_return = 1;
 
     // Since sets should not have duplicates, first check this value is not already in the set.
-    #pragma omp critical
-    for( i=0; i<setSize; i++ )
+    for( int i=0; i<setSize; i++ )
         if( set[i]==value )
         {
-            in_set = 1;
+            should_return = 1;
         }
+    }
 
-    if( in_set == 1) return;
+    if( should_return == 1) return;
 
-    // Only reach this point if the value was not found and there is room to add to the set.
-    set[setSize] = value;
-    setSize++;
+    #pragma omp critical
+    {
+    	// Only reach this point if the value was not found and there is room to add to the set.
+    	set[setSize] = value;
+    	setSize++;
+    }
 }
-
 
 //
 // Remove a value from the set, if it exists, and shuffle the remaining values so the set remains contiguous.
@@ -83,9 +88,17 @@ void removeFromSet( int value )
     // and also reducing the set size by one.
     if( index!= -1 )
     {
+        float set_temp[setSize];
+
+        #pragma omp parallel for
+        for ( int i=index; i<setSize; i++)
+            set_temp[i] = set[i];
+
+
         #pragma omp parallel for
         for( int i=index; i<setSize-1; i++ )
-            set[i] = set[i+1];
+            set[i] = set_temp[i+1];
+
         setSize--;
     }
 }
@@ -96,13 +109,13 @@ void removeFromSet( int value )
 //
 void sortSet()
 {
-    // Bubble sort.
     for( int i = 0; i < setSize - 1; i++)
     {
+        // Update odd and evens at different times.
+        // See lecture 5 redBlack code
         #pragma omp parallel for
-        for( int j = 0; j < setSize - i - 1; j++)
+        for( int j = i % 2; j < setSize - 1; j+=2)
         {
-            // printf("Thread num: %i Max Theads: %i \n", omp_get_thread_num(), omp_get_max_threads());
             if( set[j] > set[j+1] )
             {
                 int temp = set[j];
