@@ -27,7 +27,11 @@ heat:
 	$(CC) $(CCFLAGS) -o heatEqn heatEqn.c
 	mpiexec -n 4 -oversubscribe ./heatEqn
 
+binary:
+	$(CC) $(CCFLAGS) -o reverseBinaryTree reverseBinaryTree.c
+	mpiexec -n 4 -oversubscribe ./reverseBinaryTree
+
 clean:
-	rm vectorAddition vectorDouble cyclicSendAndReceive distributedCount heatEqn
+	rm vectorAddition vectorDouble cyclicSendAndReceive distributedCount heatEqn reverseBinaryTree
 
 

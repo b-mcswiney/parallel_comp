@@ -34,7 +34,7 @@
 //
 int main( int argc, char **argv )
 {
-	int i, lc;
+	int i, lc, charsPerProc;
 
 	// Initialise MPI and get the rank and no. of processes.
 	int rank, numProcs;
@@ -64,15 +64,92 @@ int main( int argc, char **argv )
 	int globalHist[MAX_LETTERS];
 	for( i=0; i<MAX_LETTERS; i++ ) globalHist[i] = 0;		// Initialise to zero.
 
-	// Calculate the number of characters per process. Note that only rank 0 has the correct value of totalChars
-	// (and hence charsPerproc) at this point. Also, we know by this point that totalChars is a multiple of numProcs.
-	int charsPerProc = totalChars / numProcs;
+    // Lists for local
+    int localHist[MAX_LETTERS];
+    // Init values for local hist
+    for( i=0; i<MAX_LETTERS; i++) localHist[i] = 0;
 
-	// Start the timing.
-	double startTime = MPI_Wtime();
+    char *localText = NULL;
+
+    // Start the timing.
+    double startTime = MPI_Wtime();
+
+    //
+    // Step 1. Dynamically allocate memory for each process
+    //
 
 
-	//
+    if( numProcs && ((numProcs&(numProcs-1))==0) ) {
+        // Send message to left child
+        int parent = (rank-1) / 2;
+        int left_child = 2 * rank + 1;
+        int right_child = 2 * rank + 2;
+
+        printf("current: %i, parent: %i, left_child: %i, right_child: %i\n",rank,  parent, left_child, right_child);
+
+        // Caluclate what we need to on rank 0 and start binary tree
+        if(rank == 0){
+            charsPerProc = totalChars / numProcs;
+
+            // Send to both children
+            MPI_Send(&charsPerProc, 1, MPI_INT, left_child, 0, MPI_COMM_WORLD);
+            MPI_Send(&charsPerProc, 1, MPI_INT,right_child, 0, MPI_COMM_WORLD);
+        }
+
+        if(left_child < numProcs && rank !=0) {
+            MPI_Recv(&charsPerProc, 1, MPI_INT, parent, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+            localText = (char *) malloc(charsPerProc * sizeof(char));
+
+            MPI_Send(&charsPerProc, 1, MPI_INT, left_child, 0, MPI_COMM_WORLD);
+            MPI_Send(&charsPerProc, 1, MPI_INT,right_child, 0, MPI_COMM_WORLD);
+        }
+
+        if(right_child < numProcs && rank !=0) {
+            MPI_Recv(&charsPerProc, 1, MPI_INT, parent, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+            localText = (char *) malloc(charsPerProc * sizeof(char));
+
+            MPI_Send(&charsPerProc, 1, MPI_INT, left_child, 0, MPI_COMM_WORLD);
+            MPI_Send(&charsPerProc, 1, MPI_INT,right_child, 0, MPI_COMM_WORLD);
+        }
+    }
+    else {
+        // Calculate the number of characters per process. Note that only rank 0 has the correct value of totalChars
+        // (and hence charsPerproc) at this point. Also, we know by this point that totalChars is a multiple of numProcs.
+        if (rank == 0) charsPerProc = totalChars / numProcs;
+
+        MPI_Bcast(&charsPerProc, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+        // All ranks now know size to allocate
+        localText = (char *) malloc(charsPerProc * sizeof(char));
+    }
+
+    //
+    // Step 2. Send global data out to each process
+    //
+
+    MPI_Scatter(
+            fullText, charsPerProc, MPI_CHAR,
+            localText, charsPerProc, MPI_CHAR,
+            0, MPI_COMM_WORLD
+            );
+
+    //
+    // Step 3. Perform counts on local data
+    //
+
+    for( i=0; i<charsPerProc; i++ )
+        if( (lc=letterCodeForChar(localText[i]))!= -1 )
+            localHist[lc]++;
+
+    //
+    // Step 4. Send all local histograms back to rank 0, which calculates total
+    //
+
+    MPI_Reduce(&localHist, &globalHist, MAX_LETTERS, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    //
 	// Your solution will primarily go here, although dynamic memory allocation and freeing may go elsewhere.
 	//
 
@@ -119,6 +196,10 @@ int main( int argc, char **argv )
 		saveHist( globalHist, MAX_LETTERS );			// Defined in cwk2_extras.h; do not change or replace the call.
 		free( fullText );
 	}
+    if(rank>0)
+    {
+        free(localText);
+    }
 	
 	MPI_Finalize();
 	return EXIT_SUCCESS;
