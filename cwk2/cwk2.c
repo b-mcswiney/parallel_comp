@@ -71,48 +71,6 @@ int main( int argc, char **argv )
 	// Start the timing.
 	double startTime = MPI_Wtime();
 
-    //
-    // Step 1. Initialize lists
-    //
-
-    // Initialise local lists
-    char *localText = (char*) malloc(charsPerProc * sizeof(char));
-    int * localHist = (int*) malloc(charsPerProc * sizeof(int));
-
-    // Point to point if numProcs is power of 2
-    if(numProcs && ((numProcs&(numProcs-1))==0)) {
-
-    }
-    // If number of processes is not a power of 2 use collective communication
-    else {
-        MPI_Bcast(&charsPerProc, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    }
-
-    //
-    // Step 2. Send data out to processes
-    //
-
-    MPI_Scatter(
-            fullText, charsPerProc, MPI_CHAR,
-            localText, charsPerProc, MPI_CHAR,
-            0, MPI_COMM_WORLD
-            );
-
-//    // Step 2. Perform counting on each process
-//    if (rank > 0) {
-//        for(i=0; i < charsPerProc; i++)
-//            if( (lc=letterCodeForChar(fullText[i]))!= -1 )
-//                local_list[lc]++;
-//    }
-//
-//    // Step 3. Recombine array back on rank 0
-//    if(rank == 0) {
-//        for(int p = 1; p < numProcs; p++) {
-//            MPI_Recv(&globalHist[p * charsPerProc], charsPerProc, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-//        }
-//    } else {
-//        MPI_Send(local_list, charsPerProc, MPI_INT, 0, 0, MPI_COMM_WORLD);
-//    }
 
 	//
 	// Your solution will primarily go here, although dynamic memory allocation and freeing may go elsewhere.
@@ -161,11 +119,6 @@ int main( int argc, char **argv )
 		saveHist( globalHist, MAX_LETTERS );			// Defined in cwk2_extras.h; do not change or replace the call.
 		free( fullText );
 	}
-
-    if(rank > 0) {
-        free(localHist);
-        free(localText);
-    }
 	
 	MPI_Finalize();
 	return EXIT_SUCCESS;
