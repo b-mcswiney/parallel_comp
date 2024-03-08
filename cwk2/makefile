@@ -11,3 +11,8 @@ CCFLAGS = -Wall -lm -std=c99
 all:
 	$(CC) $(CCFLAGS) -o $(EXE) cwk2.c
 
+point: all
+	mpiexec -n 4 -oversubscribe ./cwk2
+
+broad: all
+	mpiexec -n 5 -oversubscribe ./cwk2
