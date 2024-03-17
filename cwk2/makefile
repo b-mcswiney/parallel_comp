@@ -12,7 +12,12 @@ all:
 	$(CC) $(CCFLAGS) -o $(EXE) cwk2.c
 
 point: all
-	mpiexec -n 4 -oversubscribe ./cwk2
+	mpiexec -n 8 -oversubscribe ./cwk2
 
 broad: all
 	mpiexec -n 5 -oversubscribe ./cwk2
+
+test: all
+	mpiexec -n 4 -oversubscribe ./cwk2
+	mpiexec -n 4 -oversubscribe ./cwk2
+	mpiexec -n 4 -oversubscribe ./cwk2

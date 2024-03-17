@@ -16,13 +16,18 @@ Note that:
 
 No. Process:          Mean time (average of 3 runs)           Parallel speed-up, S:
 ============          =============================           =====================
-1	 
-2 	
-3 	
-4	 
+1	                   0.387205                                1
+2 	                   0.020203                                19.166
+3 	                   0.023779                                16.283
+4	                   0.019835                                19.521
 
 Architecture that the timing runs were performed on: desktop or laptop; make; and number of CPU cores:
+Timing runs performed on a HP Laptop with a quad-core CPU.
+
 
 A brief interpretation of these results (2-3 sentences should be sufficient):
-
+From the results we can see that the run-time decreased as more than 1 process was introduced. We can also see that
+the binary tree pattern of sending data is a lot more efficient than broadcasting data. This is most likely due to
+less calls performed by the algorithm. We can also see that parallel speed-up is not linear as 4 processes only gives
+a slight increase in speed-up over 2 processes
 
