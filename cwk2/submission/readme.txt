@@ -16,10 +16,10 @@ Note that:
 
 No. Process:          Mean time (average of 3 runs)           Parallel speed-up, S:
 ============          =============================           =====================
-1	                   0.038721                                1
-2 	                   0.020203                                1.917
-3 	                   0.023779                                1.628
-4	                   0.019835                                1.952
+1	                   0.387205                                1
+2 	                   0.020203                                19.166
+3 	                   0.023779                                16.283
+4	                   0.019835                                19.521
 
 Architecture that the timing runs were performed on: desktop or laptop; make; and number of CPU cores:
 Timing runs performed on a HP Laptop with a quad-core CPU.

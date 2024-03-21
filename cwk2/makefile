@@ -18,6 +18,6 @@ broad: all
 	mpiexec -n 5 -oversubscribe ./cwk2
 
 test: all
-	mpiexec -n 4 -oversubscribe ./cwk2
-	mpiexec -n 4 -oversubscribe ./cwk2
-	mpiexec -n 4 -oversubscribe ./cwk2
+	mpiexec -n 1 -oversubscribe ./cwk2
+	mpiexec -n 1 -oversubscribe ./cwk2
+	mpiexec -n 1 -oversubscribe ./cwk2
