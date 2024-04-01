@@ -12,4 +12,9 @@ vsub:
 overflow:
 	$(CC) $(CCFLAGS) -o registerOverflow registerOverflow.c
 	./registerOverflow
+	
+
+device:
+	$(CC) $(CCFLAGS) -o displayDevices displayDevices.c
+	./displayDevices
 
