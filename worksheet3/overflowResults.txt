@@ -1,0 +1,4 @@
+
+Suddenly worsens between N=24 and N=25.
+
+Time goes from 0.0295 to 0.1337

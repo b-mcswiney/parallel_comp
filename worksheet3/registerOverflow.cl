@@ -1,5 +1,5 @@
 // Kernel for the register overflow example. The question asks you to change this value.
-#define N 30
+#define N 24
 
 __kernel
 void doSomethingComplex( __global float *array, int L )
