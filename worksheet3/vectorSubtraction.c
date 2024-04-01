@@ -82,13 +82,18 @@ int main( int argc, char **argv )
 	status = clSetKernelArg( kernel, 1, sizeof(cl_mem), &device_b );
 	status = clSetKernelArg( kernel, 2, sizeof(cl_mem), &device_c );
 
+	size_t maxWorkItems;
+	clGetDeviceInfo( device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &maxWorkItems, NULL );
+	
+
 	// Set up the global problem size, and the work group size.
 	size_t indexSpaceSize[1], workGroupSize[1];
 	indexSpaceSize[0] = N;
-	workGroupSize [0] = 128;				// Should match to hardware; can be too large!
-
+	workGroupSize [0] = maxWorkItems;				// Should match to hardware; can be too large!
+	
 	// Put the kernel onto the command queue.
 	status = clEnqueueNDRangeKernel( queue, kernel, 1, NULL, indexSpaceSize, workGroupSize, 0, NULL, NULL );
+	//status = clEnqueueNDRangeKernel( queue, kernel, 1, NULL, indexSpaceSize, NULL, 0, NULL, NULL );
 	if( status != CL_SUCCESS )
 	{
 		printf( "Failure enqueuing kernel: Error %d.\n", status );
