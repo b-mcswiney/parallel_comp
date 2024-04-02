@@ -21,3 +21,4 @@ endif
 
 all:
 	$(CC) $(LIBS) $(CCFLAGS) -o $(EXE) cwk3.c
+	./cwk3 16 16
