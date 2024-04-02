@@ -53,7 +53,7 @@ int main( int argc, char **argv )
 	// Allocate memory for the arrays
 	cl_mem device_gradients = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, N*sizeof(float), gradients, &status);
 	cl_mem device_inputs = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, M*sizeof(float), inputs, &status);
-	cl_mem device_weights = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, M*N*sizeof(float), weights, &status); // Need to make read/write (currently can only read	
+	cl_mem device_weights = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR | CL_MEM_WRITE_ONLY, M*N*sizeof(float), weights, &status); // Need to make read/write (currently can only read	
 
 	//
 	// Perform calculation on the GPU
